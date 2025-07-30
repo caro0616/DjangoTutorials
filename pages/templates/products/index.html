@@ -1,0 +1,24 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block header_title %}{{ subtitle }}{% endblock %}
+
+{% block content %}
+<div class="row">
+  {% for product in products %}
+    <div class="col-md-4 col-lg-3 mb-4">
+      <div class="card h-100">
+        <img src="https://static.djangoproject.com/img/logos/django-logo-positive.svg" class="card-img-top" alt="Product image">
+        <div class="card-body text-center">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p class="card-text">${{ product.price }}</p>
+          <a href="{% url 'product_show' product.id %}" class="btn bg-primary text-white">
+            View Product
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,27 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block header_title %}{{ subtitle }}{% endblock %}
+
+{% block content %}
+<div class="card mb-3 mx-auto" style="max-width: 800px;">
+  <div class="row g-0">
+    <div class="col-md-4">
+      <img src="https://static.djangoproject.com/img/logos/django-logo-positive.svg" class="img-fluid rounded-start" alt="Product image">
+    </div>
+    <div class="col-md-8">
+      <div class="card-body">
+        <h5 class="card-title" style="{% if product.price > 100 %}color: red;{% endif %}">
+        {{ product.name }}
+        </h5>
+
+        <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
+        <p class="card-text">More details about the product can go here.</p>
+        <a href="{% url 'product_index' %}" class="btn btn-secondary">← Back to products</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
