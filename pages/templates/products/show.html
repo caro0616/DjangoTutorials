@@ -1,27 +1,37 @@
 {% extends 'pages/base.html' %}
 
 {% block title %}{{ title }}{% endblock %}
+
 {% block header_title %}{{ subtitle }}{% endblock %}
 
 {% block content %}
-<div class="card mb-3 mx-auto" style="max-width: 800px;">
+<div class="card mb-3">
   <div class="row g-0">
     <div class="col-md-4">
       <img src="https://static.djangoproject.com/img/logos/django-logo-positive.svg" class="img-fluid rounded-start" alt="Product image">
     </div>
     <div class="col-md-8">
       <div class="card-body">
-        <h5 class="card-title" style="{% if product.price > 100 %}color: red;{% endif %}">
-        {{ product.name }}
-        </h5>
+        <h5 class="card-title">{{ product.name }}</h5>
 
-        <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
-        <p class="card-text">More details about the product can go here.</p>
-        <a href="{% url 'product_index' %}" class="btn btn-secondary">← Back to products</a>
+        {% if product.price > 2000 %}
+          <p class="card-text" style="color: red;">${{ product.price }}</p>
+        {% else %}
+          <p class="card-text">${{ product.price }}</p>
+        {% endif %}
+
+        <hr />
+        <h6>Comments:</h6>
+        {% if product.comment_set.all %}
+          {% for comment in product.comment_set.all %}
+            <p class="card-text">• {{ comment.description }}</p>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">No comments yet.</p>
+        {% endif %}
+        
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
-
-

@@ -1,18 +1,20 @@
-from django import forms
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import TemplateView, ListView
+from django.views import View
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.views.generic import TemplateView
-from django.views import View
+from django import forms
 from django.core.exceptions import ValidationError
+from .models import Product
 
-# Página de inicio
+# Página de inicio (function-based, opcional)
 def homePageView(request):
     return render(request, 'pages/home.html')
 
 # Vista basada en clase para home
 class HomePageView(TemplateView):
-    template_name = 'home.html'
+    template_name = 'pages/home.html'
+
 
 # Página "About"
 class AboutPageView(TemplateView):
@@ -28,23 +30,8 @@ class AboutPageView(TemplateView):
         })
         return context
 
-# Clase simulada para productos (sin base de datos)
-class Product:
-    products = [
-        {"id": 0, "name": "TV", "price": 468.99},
-        {"id": 1, "name": "iPhone", "price": 897.99},
-        {"id": 2, "name": "Chromecast", "price": 49.99},
-        {"id": 3, "name": "Glasses", "price": 79.99},
-    ]
 
-    @staticmethod
-    def get_by_id(product_id):
-        for product in Product.products:
-            if product["id"] == product_id:
-                return product
-        return None
-
-# Vista para listar productos
+# Vista para listar productos (usando View)
 class ProductIndexView(View):
     template_name = 'products/index.html'
 
@@ -52,32 +39,36 @@ class ProductIndexView(View):
         viewData = {
             "title": "Products - Online Store",
             "subtitle": "List of products",
-            "products": Product.products
+            "products": Product.objects.all()
         }
         return render(request, self.template_name, viewData)
 
-# Vista para mostrar un producto
+
+# Vista para mostrar un único producto
 class ProductShowView(View):
     template_name = 'products/show.html'
 
     def get(self, request, id):
+        # Validar si el ID es un entero positivo
         try:
-            id = int(id)
-        except ValueError:
+            product_id = int(id)
+            if product_id < 1:
+                raise ValueError()
+        except (ValueError, TypeError):
             return HttpResponseRedirect(reverse('home'))
 
-        product = Product.get_by_id(id)
-        if not product:
-            return HttpResponseRedirect(reverse('home'))
+        # Obtener el producto o dar 404
+        product = get_object_or_404(Product, pk=product_id)
 
         viewData = {
-            "title": f"{product['name']} - Online Store",
-            "subtitle": f"{product['name']} - Product information",
+            "title": f"{product.name} - Online Store",
+            "subtitle": f"{product.name} - Product information",
             "product": product
         }
         return render(request, self.template_name, viewData)
 
-# Formulario para crear productos
+
+# Formulario para crear productos con validación de precio
 class ProductForm(forms.Form):
     name = forms.CharField(required=True)
     price = forms.FloatField(required=True)
@@ -87,6 +78,7 @@ class ProductForm(forms.Form):
         if price is not None and price <= 0:
             raise ValidationError("Price must be greater than 0.")
         return price
+
 
 # Vista para crear un producto
 class ProductCreateView(View):
@@ -103,9 +95,9 @@ class ProductCreateView(View):
     def post(self, request):
         form = ProductForm(request.POST)
         if form.is_valid():
-            viewData = {
-                "title": "Product Created"
-            }
+            # Aquí no guardas en base de datos porque usas Form, 
+            # si lo quisieras, cambias a ModelForm y usas form.save()
+            viewData = {"title": "Product Created"}
             return render(request, 'products/created.html', viewData)
         else:
             viewData = {
@@ -114,3 +106,15 @@ class ProductCreateView(View):
             }
             return render(request, self.template_name, viewData)
 
+
+# Vista genérica para listar productos usando ListView
+class ProductListView(ListView):
+    model = Product
+    template_name = 'products/list.html'
+    context_object_name = 'products'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Products - Online Store'
+        context['subtitle'] = 'List of products'
+        return context
