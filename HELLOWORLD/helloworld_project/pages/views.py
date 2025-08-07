@@ -1,24 +1,22 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import TemplateView, ListView
 from django.views import View
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import Product
 
-# Vista para la página de inicio
+# Página de inicio (function-based, opcional)
+def homePageView(request):
+    return render(request, 'pages/home.html')
+
+# Vista basada en clase para home
 class HomePageView(TemplateView):
     template_name = 'pages/home.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            "title": "Home - Online Store",
-            "subtitle": "Welcome to the application",
-            "description": "This is the home page ...",
-            "author": "Developed by: Leidy Obando",
-        })
-        return context
 
-# Vista para la página "about"
+# Página "About"
 class AboutPageView(TemplateView):
     template_name = 'pages/about.html'
 
@@ -27,46 +25,13 @@ class AboutPageView(TemplateView):
         context.update({
             "title": "About us - Online Store",
             "subtitle": "About us",
-            "description": "This is an about page ...",
-            "author": "Developed by: Leidy Obando",
+            "description": "This is an about page",
+            "author": "Developed by: Kenia Toscano",
         })
         return context
 
-# Clase simulada de productos (con precios)
-class Product:
-    products = [
-        {
-            "id": "tv",
-            "name": "TV",
-            "description": "Smart TV 55 pulgadas 4K UHD",
-            "price": 800
-        },
-        {
-            "id": "iphone",
-            "name": "iPhone",
-            "description": "iPhone 14 Pro Max 256GB",
-            "price": 1200
-        },
-        {
-            "id": "chromecast",
-            "name": "Chromecast",
-            "description": "Chromecast con Google TV",
-            "price": 50
-        },
-        {
-            "id": "glasses",
-            "name": "Smart Glasses",
-            "description": "Gafas inteligentes de realidad aumentada",
-            "price": 300
-        },
-    ]
 
-    @classmethod
-    def find_by_id(cls, id):
-        return next((product for product in cls.products if product["id"] == id), None)
-
-
-# Vista para mostrar todos los productos
+# Vista para listar productos (usando View)
 class ProductIndexView(View):
     template_name = 'products/index.html'
 
@@ -74,22 +39,82 @@ class ProductIndexView(View):
         viewData = {
             "title": "Products - Online Store",
             "subtitle": "List of products",
-            "products": Product.products
+            "products": Product.objects.all()
         }
         return render(request, self.template_name, viewData)
 
-# Vista para mostrar un solo producto por ID
+
+# Vista para mostrar un único producto
 class ProductShowView(View):
     template_name = 'products/show.html'
 
     def get(self, request, id):
-        product = Product.find_by_id(id)
-        if not product:
-            return HttpResponseRedirect('/')  # redirección si no existe
+        # Validar si el ID es un entero positivo
+        try:
+            product_id = int(id)
+            if product_id < 1:
+                raise ValueError()
+        except (ValueError, TypeError):
+            return HttpResponseRedirect(reverse('home'))
+
+        # Obtener el producto o dar 404
+        product = get_object_or_404(Product, pk=product_id)
 
         viewData = {
-            "title": f"{product['name']} - Online Store",
-            "subtitle": f"{product['name']} - Product information",
+            "title": f"{product.name} - Online Store",
+            "subtitle": f"{product.name} - Product information",
             "product": product
         }
         return render(request, self.template_name, viewData)
+
+
+# Formulario para crear productos con validación de precio
+class ProductForm(forms.Form):
+    name = forms.CharField(required=True)
+    price = forms.FloatField(required=True)
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price is not None and price <= 0:
+            raise ValidationError("Price must be greater than 0.")
+        return price
+
+
+# Vista para crear un producto
+class ProductCreateView(View):
+    template_name = 'products/create.html'
+
+    def get(self, request):
+        form = ProductForm()
+        viewData = {
+            "title": "Create product",
+            "form": form
+        }
+        return render(request, self.template_name, viewData)
+
+    def post(self, request):
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            # Aquí no guardas en base de datos porque usas Form, 
+            # si lo quisieras, cambias a ModelForm y usas form.save()
+            viewData = {"title": "Product Created"}
+            return render(request, 'products/created.html', viewData)
+        else:
+            viewData = {
+                "title": "Create product",
+                "form": form
+            }
+            return render(request, self.template_name, viewData)
+
+
+# Vista genérica para listar productos usando ListView
+class ProductListView(ListView):
+    model = Product
+    template_name = 'products/list.html'
+    context_object_name = 'products'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Products - Online Store'
+        context['subtitle'] = 'List of products'
+        return context
