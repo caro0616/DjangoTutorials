@@ -1,0 +1,35 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          Create Product
+        </div>
+        <div class="card-body">
+          {% if form.errors %}
+            <ul class="alert alert-danger">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <form action="{% url 'product_create' %}" method="post">
+            {% csrf_token %}
+            <input type="text" class="form-control mb-2" placeholder="Enter name" name="name" value="{{ form.data.name }}">
+            <input type="text" class="form-control mb-2" placeholder="Enter price" name="price" value="{{ form.data.price }}">
+            <input type="submit" class="btn btn-primary" value="Send">
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
