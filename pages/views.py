@@ -26,7 +26,7 @@ class AboutPageView(TemplateView):
             "title": "About us - Online Store",
             "subtitle": "About us",
             "description": "This is an about page",
-            "author": "Developed by: Kenia Toscano",
+            "author": "Developed by: Leidy Obando",
         })
         return context
 
