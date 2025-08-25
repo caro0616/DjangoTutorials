@@ -1,0 +1,25 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Image Storage - DI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <h2>Subir Imagen</h2>
+        <form action="{% url 'image_save' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="image" class="form-label">Imagen:</label>
+                <input type="file" name="image" id="image" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Subir</button>
+        </form>
+
+        {% if image_url %}
+            <hr>
+            <h4>Imagen actual:</h4>
+            <img src="{{ image_url }}" alt="Uploaded Image" class="img-fluid mt-2">
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

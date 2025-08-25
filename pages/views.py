@@ -6,6 +6,7 @@ from django.urls import reverse
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Product
+from .utils import ImageLocalStorage 
 
 # Página de inicio (function-based, opcional)
 def homePageView(request):
@@ -162,3 +163,39 @@ class CartRemoveAllView(View):
             del request.session['cart_product_data']
 
         return redirect('cart_index')
+
+def ImageViewFactory(image_storage):
+    class ImageView(View):
+        template_name = 'images/index.html'
+
+
+        def get(self, request):
+            # Obtenemos la URL de la imagen desde la sesión, si no existe ponemos vacío
+            image_url = request.session.get('image_url', '')
+            return render(request, self.template_name, {'image_url': image_url})
+
+        def post(self, request):
+            # Aquí puedes usar image_storage para guardar la imagen enviada
+            uploaded_file = request.FILES.get('image')  # suponiendo que el formulario suba un archivo con nombre 'image'
+            if uploaded_file:
+                # Guardamos la imagen usando la clase de almacenamiento pasada
+                image_url = image_storage.save(uploaded_file.name, uploaded_file)
+                request.session['image_url'] = image_url
+            return redirect('image_index')  # nombre de la URL que debe existir en urls.py
+
+    return ImageView
+
+class ImageViewNoDI(View):
+    template_name = 'images/index.html'
+
+    def get(self, request):
+        image_url = request.session.get('image_url', '')
+        return render(request, self.template_name, {'image_url': image_url})
+
+    def post(self, request):
+        image_storage = ImageLocalStorage()
+        uploaded_file = request.FILES.get('image')
+        if uploaded_file:
+            image_url = image_storage.store(uploaded_file)
+            request.session['image_url'] = image_url
+        return redirect('image_index')
